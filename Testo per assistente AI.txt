@@ -1,0 +1,12 @@
+Sei un assistente con accesso al mio browser Chrome. Aiutami a configurare "House Wishlist", una lista per la casa nuova basata su Google Sheets e Gemini. Lavora un passo alla volta, dimmi cosa stai facendo e FERMATI chiedendomi di intervenire dove c'è scritto [TOCCA A ME].
+
+1. Apri https://docs.google.com/spreadsheets/d/1nNgXQRwBtEuTrC0G84SEBZ5U2WfVK6_cUf2_ficSf08/copy e clicca "Make a copy" / "Crea una copia".
+2. Nella copia ricarica la pagina e aspetta il menu "🏠 House Wishlist". Aprilo e scegli "1. Set up the list".
+3. [TOCCA A ME] Google mostrerà "Authorization required". Fermati e chiedimi di approvare io (Continua → account → Avanzate → Vai a House Wishlist → Consenti). Quando ti dico "fatto", se non ci sono ancora le schede Items, Settings e Summary, rilancia "1. Set up the list".
+4. [TOCCA A ME] Apri https://aistudio.google.com/apikey. Non creare e non copiare chiavi tu: chiedimi di creare una chiave e di copiarla.
+5. Torna al foglio, menu "🏠 House Wishlist" → "2. Set Gemini API key". [TOCCA A ME] Lascia che sia io a incollare la chiave e a premere OK. Poi esegui "🏠 House Wishlist" → "Test Gemini" e controlla che risponda "Gemini works".
+6. Pubblica l'app: menu Estensioni → Apps Script. Nell'editor: Deploy (Esegui il deployment) → New deployment (Nuovo deployment) → icona ingranaggio → Web app. Imposta "Execute as: User accessing the web app" e "Who has access: Anyone with Google account", poi Deploy. [TOCCA A ME] se compare una richiesta di autorizzazione.
+7. Copia l'URL dell'app web (finisce con /exec), aprilo in una nuova scheda e controlla che si veda la lista con le stanze (Living Room, Kitchen, …). Se resta su "Loading", aspetta un minuto e ricarica.
+8. Alla fine dammi l'URL /exec e ricordami di: salvarlo nei preferiti; installare l'estensione House Wishlist dallo zip (doppio clic su "INSTALLA House Wishlist") e incollare questo URL al primo clic sull'icona; controllare la valuta dalla rotellina ⚙ in alto nell'app (di base è l'euro).
+
+Regole: non inserire tu password, chiavi API o dati di pagamento; non cambiare impostazioni di sicurezza del mio account; non condividere il foglio con nessuno senza chiedermelo.

@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>House Wishlist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&display=swap">
+<script>window.addEventListener("error", function (e) { var l = document.getElementById("list"); if (l) l.innerHTML = '<div class="note err">Page error: ' + String(e.message || "").replace(/</g, "&lt;") + " (line " + (e.lineno || "?") + ")</div>"; });</script>
+<style>
+.nm { display: flex; align-items: center; gap: 10px; }
+img[data-zoom] { cursor: zoom-in; transition: transform .15s; }
+img[data-zoom]:hover { transform: scale(1.06); }
+.lb { position: fixed; inset: 0; z-index: 60; background: rgba(8, 12, 14, .82); display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
+.lb figure { margin: 0; display: grid; gap: 12px; justify-items: center; max-width: min(92vw, 1000px); }
+.lb img { max-width: 100%; max-height: 78vh; object-fit: contain; border-radius: 14px; background: #fff; box-shadow: 0 20px 60px rgba(0, 0, 0, .5); }
+.lb figcaption { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: center; color: #fff; font-weight: 600; text-align: center; }
+.lb figcaption a { color: #9fe0c9; font-weight: 600; }
+.lb #lbClose { position: absolute; top: 14px; right: 14px; width: 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .15); color: #fff; font-size: 18px; cursor: pointer; }
+.lb #lbClose:hover { background: rgba(255, 255, 255, .28); }
+.nmt { min-width: 0; }
+.th { width: 48px; height: 48px; object-fit: cover; border-radius: 8px; flex: none; background: var(--surface-2); border: 1px solid var(--line); }
+.lth { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; flex: none; background: var(--surface); }
+.pth { width: 96px; height: 96px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); }
+.btn.gear { font-size: 18px; line-height: 1; padding: 6px 10px; }
+.small-muted { color: var(--muted); font-weight: 400; font-size: 12px; margin-left: 4px; }
+.setrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 10px; }
+.setlab { font-size: 12px; color: var(--muted); font-weight: 600; min-width: 80px; }
+.setrow .names { margin-top: 0; }
+.bm { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; justify-content: space-between; border-top: 1px dashed var(--line); padding-top: 10px; color: var(--muted); font-size: 13px; }
+.bm span { flex: 1 1 260px; min-width: 0; }
+.bm a { cursor: grab; }
+
+/* Layout: sticky budget strip + room tabs on top, one grouped list of item rows below; rows expand in place for links and details. */
+:root {
+  --bg: #F3F6F5;
+  --surface: #FFFFFF;
+  --surface-2: #EAF0EE;
+  --ink: #17222A;
+  --muted: #5B6A71;
+  --line: #D8E0DD;
+  --accent: #2C6B5B;
+  --accent-ink: #FFFFFF;
+  --must: #B93A26;
+  --must-bg: #FBE7E3;
+  --imp: #A86A12;
+  --imp-bg: #FBF0DC;
+  --nice: #3563A8;
+  --nice-bg: #E3ECF8;
+  --ok: #2B7A4B;
+  --ok-bg: #DDF1E4;
+  --warn-bg: #FFF4CF;
+  --warn: #8A6400;
+  --off: #8A979C;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --r: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0F1518; --surface: #172026; --surface-2: #1E2A31; --ink: #E6ECEA; --muted: #95A4AA; --line: #2A3740;
+  --accent: #6BC0A5; --accent-ink: #0D1B16;
+  --must: #F1806B; --must-bg: #3A201B; --imp: #E5B451; --imp-bg: #362A14; --nice: #86ADEB; --nice-bg: #1C2A40;
+  --ok: #73D198; --ok-bg: #16301F; --warn-bg: #3A3014; --warn: #EBC35A; --off: #6E7C82; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0F1518; --surface: #172026; --surface-2: #1E2A31; --ink: #E6ECEA; --muted: #95A4AA; --line: #2A3740;
+  --accent: #6BC0A5; --accent-ink: #0D1B16;
+  --must: #F1806B; --must-bg: #3A201B; --imp: #E5B451; --imp-bg: #362A14; --nice: #86ADEB; --nice-bg: #1C2A40;
+  --ok: #73D198; --ok-bg: #16301F; --warn-bg: #3A3014; --warn: #EBC35A; --off: #6E7C82; color-scheme: dark }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; } [hidden] { display: none !important; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 14px; line-height: 1.45; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+.wrap { max-width: 1040px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 60px; }
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+
+header.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; }
+h1 { font-family: var(--display); font-weight: 700; font-size: clamp(26px, 5vw, 36px); letter-spacing: -0.02em; margin: 0; line-height: 1.05; text-wrap: balance; }
+.sub { color: var(--muted); margin: 6px 0 0; }
+.tools { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 7px 12px; font-weight: 500; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+/* budget strip */
+.strip { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 14px 10px; margin-top: 14px; }
+.kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.kpi { background: var(--surface); padding: 10px 12px; min-width: 0; }
+.kpi .lab { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+.kpi .val { font-family: var(--display); font-size: 22px; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpi .val.neg { color: var(--must); }
+.kpi input.budget { width: 100%; border: 1px dashed var(--line); background: var(--surface-2); border-radius: 6px; padding: 2px 6px; font-family: var(--display); font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.bar { height: 6px; background: var(--surface-2); border-radius: 99px; margin-top: 10px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--ok); border-radius: 99px; transition: width .3s; }
+.barlab { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+.tabs { display: flex; gap: 6px; overflow-x: auto; padding-block: 10px 2px; scrollbar-width: thin; }
+.tab { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 6px 12px; font-weight: 500; white-space: nowrap; }
+.tab .c { color: var(--muted); font-size: 12px; margin-left: 4px; }
+.tab[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.tab[aria-selected="true"] .c { color: inherit; opacity: .7; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+.filters input[type=search] { flex: 1 1 180px; min-width: 0; border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 7px 10px; }
+.chk { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); }
+
+/* segmented buttons */
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); flex-wrap: wrap; }
+.seg button { border: 0; background: transparent; padding: 5px 9px; font-size: 12.5px; font-weight: 500; color: var(--muted); border-right: 1px solid var(--line); }
+.seg button:last-child { border-right: 0; }
+.seg button:hover { color: var(--ink); background: var(--surface-2); }
+.seg button[aria-pressed="true"] { color: var(--ink); font-weight: 600; }
+.seg.prio button[data-v="Must-have"][aria-pressed="true"] { background: var(--must-bg); color: var(--must); }
+.seg.prio button[data-v="Important"][aria-pressed="true"] { background: var(--imp-bg); color: var(--imp); }
+.seg.prio button[data-v="Nice-to-have"][aria-pressed="true"] { background: var(--nice-bg); color: var(--nice); }
+.seg.flt button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.seg.st button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+
+/* list */
+section.room { margin-top: 22px; }
+.roomhead { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; border-bottom: 2px solid var(--ink); padding-bottom: 6px; }
+.roomhead h2 { font-family: var(--display); font-size: 20px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+.roomhead .rs { color: var(--muted); font-size: 12.5px; }
+.item { border-bottom: 1px solid var(--line); }
+.row { display: grid; grid-template-columns: 116px minmax(0, 1fr) auto 88px 34px; gap: 10px; align-items: center; padding: 8px 0; }
+.item.done .row .nm { text-decoration: line-through; text-decoration-color: var(--off); color: var(--muted); }
+.item.off .row { opacity: .55; }
+.pill { border: 1px solid var(--line); border-radius: 99px; padding: 4px 8px; font-size: 12px; font-weight: 600; background: var(--surface); text-align: left; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; width: 100%; }
+.pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--off); flex: none; }
+.pill[data-s="Chosen"] { background: var(--warn-bg); color: var(--warn); border-color: transparent; } .pill[data-s="Chosen"] .dot { background: var(--warn); }
+.pill[data-s="Ordered"] { background: var(--nice-bg); color: var(--nice); border-color: transparent; } .pill[data-s="Ordered"] .dot { background: var(--nice); }
+.pill[data-s="Bought"] { background: var(--ok-bg); color: var(--ok); border-color: transparent; } .pill[data-s="Bought"] .dot { background: var(--ok); }
+.pill[data-s="Already have"], .pill[data-s="Not needed"] { color: var(--muted); }
+.nm { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.nm .q { color: var(--muted); font-weight: 500; margin-left: 4px; }
+.nm .meta { display: block; font-weight: 400; font-size: 12px; color: var(--muted); }
+.nm .meta a { color: var(--accent); }
+.price { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; }
+.price small { display: block; color: var(--muted); font-size: 11px; font-weight: 400; }
+.exp { border: 0; background: transparent; width: 34px; height: 34px; border-radius: 8px; color: var(--muted); font-size: 16px; }
+.exp:hover { background: var(--surface-2); }
+.exp[aria-expanded="true"] { transform: rotate(180deg); }
+
+.detail { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; margin: 0 0 12px; display: grid; gap: 14px; }
+.detail h3 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.links { display: grid; gap: 6px; }
+.lnk { display: flex; align-items: center; gap: 8px; min-width: 0; background: var(--surface-2); border-radius: 8px; padding: 6px 8px; }
+.lnk a { color: var(--accent); font-weight: 600; text-decoration: none; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.lnk a:hover { text-decoration: underline; }
+.lnk .host { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.lnk .x { border: 0; background: transparent; color: var(--muted); padding: 2px 6px; border-radius: 6px; }
+.lnk .x:hover { color: var(--must); background: var(--must-bg); }
+.addlink { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto; gap: 6px; }
+.fld input, .fld textarea, .addlink input, .addrow input { width: 100%; border: 1px solid var(--line); background: var(--bg); border-radius: 8px; padding: 7px 9px; min-width: 0; }
+.fields { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.fld label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 3px; font-weight: 500; }
+.fld.wide { grid-column: span 2; }
+.fld.full { grid-column: 1 / -1; }
+.fld textarea { min-height: 54px; resize: vertical; }
+.dfoot { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: center; }
+.del { border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 8px; padding: 6px 10px; }
+.del.arm { background: var(--must); color: #fff; border-color: var(--must); }
+.hint { color: var(--muted); font-size: 12px; }
+
+.addrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; padding-top: 10px; }
+.empty, .note { margin-top: 22px; padding: 18px; border: 1px dashed var(--line); border-radius: var(--r); color: var(--muted); background: var(--surface); }
+.note.err { border-style: solid; border-color: var(--must); color: var(--must); }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-weight: 500; z-index: 20; }
+
+/* quick add from link */
+.qa { margin-top: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: grid; gap: 10px; }
+.qa h2 { font-family: var(--display); font-size: 17px; margin: 0; font-weight: 700; }
+.qa .lead { color: var(--muted); margin: 0; font-size: 13px; }
+.qaform { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.qaform input { width: 100%; min-width: 0; border: 1.5px solid var(--accent); background: var(--bg); border-radius: 8px; padding: 9px 11px; font-size: 15px; }
+.qa details summary { cursor: pointer; color: var(--muted); font-size: 12.5px; }
+.qa textarea { width: 100%; min-height: 60px; border: 1px solid var(--line); background: var(--bg); border-radius: 8px; padding: 7px 9px; margin-top: 6px; resize: vertical; }
+.qastat { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+.spin { width: 14px; height: 14px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: sp 0.8s linear infinite; flex: none; }
+@keyframes sp { to { transform: rotate(360deg); } }
+.prev { border: 1px solid var(--accent); border-radius: var(--r); padding: 12px; display: grid; gap: 12px; background: var(--bg); }
+.prev .src { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.prev .src a { color: var(--accent); }
+.prev .acts { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.prev select { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 7px 9px; max-width: 100%; }
+.qwarn { font-size: 12.5px; color: var(--warn); background: var(--warn-bg); border-radius: 8px; padding: 7px 10px; }
+
+details.settings { margin-top: 8px; }
+details.settings summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+.names { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.names input { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 9px; width: 160px; }
+
+@media (max-width: 760px) {
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpi.wideK { grid-column: 1 / -1; }
+  .row { grid-template-columns: minmax(0, 1fr) auto 34px; grid-template-areas: "nm price exp" "st prio prio"; row-gap: 6px; }
+  .row .pill { grid-area: st; width: auto; justify-self: start; }
+  .row .nm { grid-area: nm; } .row .seg { grid-area: prio; justify-self: end; } .row .price { grid-area: price; } .row .exp { grid-area: exp; }
+  .fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .addlink { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+a.btn { text-decoration: none; display: inline-flex; align-items: center; color: var(--ink); }
+a.btn.primary { color: var(--accent-ink); }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>House Wishlist</h1>
+      <p class="sub">Everything to buy for the flat, room by room. Saved in your Google Sheet; changes from the other person show up within a few seconds.</p>
+    </div>
+    <div class="tools">
+      <button class="btn gear" id="gearBtn" type="button" title="Settings: currency and names" aria-label="Settings">⚙</button>
+      <button class="btn" id="refreshBtn" type="button">Refresh</button>
+      <a class="btn" id="sheetLink" href="#" target="_blank" rel="noopener" hidden>Open Google Sheet ↗</a>
+    </div>
+  </header>
+
+  <section class="qa" id="qaBox" aria-labelledby="qaTitle">
+    <h2 id="qaTitle">Found something online? Paste the link</h2>
+    <p class="lead">Gemini reads the product page, fills in name, price and shop, and files it under the right room. You check it before it's added.</p>
+    <form class="qaform" id="qaForm">
+      <input id="qaUrl" type="url" placeholder="https://www.ikea.com/kr/ko/p/…" aria-label="Product link" required>
+      <button class="btn primary" id="qaGo">Sort it</button>
+    </form>
+    <details id="qaMore"><summary>Add the product title or price yourself (helps if the page can't be read)</summary>
+      <textarea id="qaText" placeholder="e.g. KIVIK 3-seat sofa, grey, ₩899,000"></textarea>
+    </details>
+    <div id="qaOut"></div>
+  </section>
+
+  <div class="strip">
+    <div class="kpis">
+      <div class="kpi"><div class="lab">Budget</div><input id="budget" class="budget num" inputmode="decimal" placeholder="₩ —" aria-label="Total budget in Korean won"></div>
+      <div class="kpi"><div class="lab">Estimated total</div><div class="val" id="kEst">—</div></div>
+      <div class="kpi"><div class="lab">Paid so far</div><div class="val" id="kPaid">—</div></div>
+      <div class="kpi"><div class="lab">Still to spend</div><div class="val" id="kLeft">—</div></div>
+      <div class="kpi wideK"><div class="lab">Budget left</div><div class="val" id="kBud">—</div></div>
+    </div>
+    <div class="bar"><i id="bar" style="width:0%"></i></div>
+    <div class="barlab"><span id="barTxt">—</span><span id="mustTxt"></span></div>
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="filters">
+      <input type="search" id="q" placeholder="Search items, stores, notes…" aria-label="Search">
+      <div class="seg flt" id="pf" role="group" aria-label="Filter by priority"></div>
+      <label class="chk"><input type="checkbox" id="hideDone"> Hide bought &amp; skipped</label>
+    </div>
+    <details class="settings" id="settingsBox">
+      <summary>⚙ Settings <span class="small-muted">currency and your names</span></summary>
+      <div class="setrow"><span class="setlab">Currency</span><div class="seg flt" id="curSeg" role="group" aria-label="Currency"></div></div>
+      <div class="hint" id="curNote"></div>
+      <div class="setrow"><span class="setlab">Your names</span><div class="names"><input id="nA" placeholder="Partner A" aria-label="First name"><input id="nB" placeholder="Partner B" aria-label="Second name"></div></div>
+    </details>
+  </div>
+
+  <div id="list"><div class="note">Loading your list…</div></div>
+</div>
+<div class="toast" id="toast" hidden></div>
+<div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-label="Photo preview">
+  <figure>
+    <img id="lbImg" alt="" referrerpolicy="no-referrer">
+    <figcaption><span id="lbCap"></span><a id="lbLink" href="#" target="_blank" rel="noopener noreferrer">Open the product ↗</a></figcaption>
+  </figure>
+  <button id="lbClose" type="button" aria-label="Close preview">✕</button>
+</div>
+
+<script>
+const ROOMS = ["Living Room", "Kitchen", "Bedroom", "Bathroom", "Studio", "Household"];
+const PRIOS = [["Must-have", "Must"], ["Important", "Important"], ["Nice-to-have", "Nice"]];
+const MAIN = ["To choose", "Chosen", "Ordered", "Bought"];
+const STATUSES = [...MAIN, "Already have", "Not needed"];
+const OFF = new Set(["Already have", "Not needed"]);
+const POLL_MS = 20000;
+
+let items = new Map(), settings = {}, loaded = false;
+let tab = "All", prioF = "All", query = "", hideDone = false;
+const open = new Set(), armed = new Set();
+let pending = 0, lastWrite = 0;
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+/* ---------- currencies: prices are stored in won, shown in the chosen currency ---------- */
+const CUR = { EUR: ["€", 2], KRW: ["₩", 0], USD: ["$", 2], GBP: ["£", 2], JPY: ["¥", 0], CNY: ["CN¥", 2], CHF: ["CHF ", 2] };
+const FALLBACK_RATE = { EUR: 0.00064, USD: 0.0007, GBP: 0.00054, JPY: 0.107, CNY: 0.005, CHF: 0.00057 };
+function cur() { return CUR[settings.currency] ? settings.currency : "EUR"; }
+function rate() { const c = cur(); if (c === "KRW") return 1; const r = Number(settings["rate_" + c]); return isFinite(r) && r > 0 ? r : FALLBACK_RATE[c]; }
+function sym() { return CUR[cur()][0]; }
+const fromKRW = k => (k == null || k === "" || isNaN(k)) ? null : Number(k) * rate();
+const toKRW = v => (v == null || isNaN(v)) ? null : Math.round(v / rate());
+const eur = n => {
+  if (n == null || isNaN(n)) return "—";
+  const v = fromKRW(n), dec = CUR[cur()][1] && Math.abs(v) < 1000 ? 2 : 0;
+  return (v < 0 ? "−" : "") + sym() + Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+};
+function dispVal(k) { const v = fromKRW(k); if (v == null) return ""; return CUR[cur()][1] ? Math.round(v * 100) / 100 : Math.round(v); }
+function numIn(v) {
+  if (!CUR[cur()][1]) return num(v);
+  let s = String(v ?? "").replace(/[^\d.,\-]/g, "");
+  if (!s) return null;
+  if (/,\d{1,2}$/.test(s) && s.indexOf(".") < 0) s = s.replace(",", "."); else s = s.replace(/,/g, "");
+  const n = parseFloat(s); return isNaN(n) ? null : n;
+}
+const num = v => {
+  if (v === "" || v == null) return null;
+  if (typeof v === "number") return isFinite(v) ? v : null;
+  const raw = String(v), man = /만/.test(raw);
+  let s = raw.replace(/[^\d.\-]/g, "");
+  if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, "");
+  let n = parseFloat(s); if (isNaN(n)) return null;
+  if (man) n *= 10000;
+  return Math.round(n);
+};
+const host = u => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return ""; } };
+const estOf = it => (Number(it.qty) || 0) * (Number(it.est) || 0);
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 2600); }
+function names() { return [settings.nameA || "Partner A", settings.nameB || "Partner B"]; }
+
+/* ---------- server calls (Google Apps Script) ---------- */
+function api(fn, ...args) {
+  return new Promise((res, rej) => {
+    if (!(window.google && google.script && google.script.run)) { rej(new Error("NO_GAS")); return; }
+    google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args);
+  });
+}
+function errText(e) {
+  const m = String(e && e.message || e || "");
+  if (m.includes("NO_KEY")) return "The Gemini API key isn't set yet. In the Google Sheet use 🏠 House Wishlist → Set Gemini API key.";
+  if (m.includes("GEMINI_LIMIT")) return "Gemini's free limit is reached for now. Try again in a minute.";
+  if (m.includes("GEMINI_")) return "Gemini didn't answer properly. Check the model name in the Settings tab.";
+  if (m.includes("NOT_SET_UP")) return "The Sheet isn't set up yet. Open it and use 🏠 House Wishlist → Set up the list.";
+  if (m.includes("NO_GAS")) return "This page only works when opened from its Google Apps Script link.";
+  return "Something went wrong talking to Google. Try again.";
+}
+// writes go to the Sheet one after another, so an item is always created before it's edited
+let queue = Promise.resolve();
+function write(fn, ...args) {
+  pending++; lastWrite = Date.now();
+  queue = queue.then(() => api(fn, ...args))
+    .catch(e => { toast(errText(e)); setTimeout(() => load(true), 300); })
+    .finally(() => { pending--; lastWrite = Date.now(); });
+  return queue;
+}
+function patch(id, data) {
+  const it = items.get(id); if (!it) return;
+  items.set(id, { ...it, ...data }); render();
+  write("patchItem", id, data);
+}
+function saveSetting(k, v) { settings[k] = v; renderHeader(); write("saveSettings", { [k]: v }); }
+
+async function load(force) {
+  if (!force && (pending > 0 || Date.now() - lastWrite < 4000)) return;
+  try {
+    const d = await api("getData");
+    if (!force && (pending > 0 || Date.now() - lastWrite < 4000)) return;
+    items = new Map(d.items.map(it => [it.id, it]));
+    settings = d.settings || {};
+    if (d.sheetUrl) { const a = $("#sheetLink"); a.href = d.sheetUrl; a.hidden = false; }
+    if (d.appUrl) setupBookmarklet(d.appUrl);
+    loaded = true; render();
+  } catch (e) {
+    if (!loaded) $("#list").innerHTML = `<div class="note err">${esc(errText(e))}</div>`;
+  }
+}
+
+/* ---------- stats ---------- */
+function stats(list) {
+  let est = 0, paid = 0, left = 0, n = 0, bought = 0, mustN = 0, mustB = 0;
+  for (const it of list) {
+    paid += Number(it.paid) || 0;
+    if (OFF.has(it.status)) continue;
+    n++; est += estOf(it);
+    if (it.status === "Bought") bought++; else left += estOf(it);
+    if (it.priority === "Must-have") { mustN++; if (it.status === "Bought") mustB++; }
+  }
+  return { est, paid, left, n, bought, mustN, mustB };
+}
+
+/* ---------- render ---------- */
+function sorted() {
+  return [...items.values()].sort((a, b) => (ROOMS.indexOf(a.room) - ROOMS.indexOf(b.room)) || ((a.order ?? 0) - (b.order ?? 0)));
+}
+function visible(it) {
+  if (tab !== "All" && it.room !== tab) return false;
+  if (prioF !== "All" && it.priority !== prioF) return false;
+  if (hideDone && (it.status === "Bought" || OFF.has(it.status))) return false;
+  if (query) {
+    const hay = [it.name, it.store, it.notes, ...(it.links || []).map(l => l.label + " " + l.url)].join(" ").toLowerCase();
+    if (!hay.includes(query)) return false;
+  }
+  return true;
+}
+function itemImage(it) { return it.image || ((it.links || []).find(l => l.image) || {}).image || ""; }
+function whoLabel(w) { const [a, b] = names(); return w === "A" ? a : w === "B" ? b : w === "Both" ? "Both" : ""; }
+
+function renderHeader() {
+  const all = sorted(), s = stats(all);
+  $("#kEst").textContent = eur(s.est);
+  $("#kPaid").textContent = eur(s.paid);
+  $("#kLeft").textContent = eur(s.left);
+  const b = num(settings.budget);
+  const kb = $("#kBud");
+  if (b == null) { kb.textContent = "Set a budget"; kb.className = "val"; kb.style.fontSize = "15px"; }
+  else { const r = b - s.paid - s.left; kb.textContent = eur(r); kb.className = "val" + (r < 0 ? " neg" : ""); kb.style.fontSize = ""; }
+  if (document.activeElement !== $("#budget")) $("#budget").value = b == null ? "" : dispVal(b);
+  $("#budget").placeholder = sym().trim() + " —";
+  $("#curSeg").innerHTML = Object.keys(CUR).map(c => `<button type="button" data-cur="${c}" aria-pressed="${cur() === c}">${CUR[c][0].trim()} ${c}</button>`).join("");
+  $("#curNote").textContent = cur() === "KRW" ? "" : `Today's rate: 1 ${cur()} = ₩${Math.round(1 / rate()).toLocaleString("en-US")} (Google Finance). Prices are still saved in won.`;
+  const pct = s.n ? Math.round(s.bought / s.n * 100) : 0;
+  $("#bar").style.width = pct + "%";
+  $("#barTxt").textContent = `${s.bought} of ${s.n} items bought (${pct}%)`;
+  $("#mustTxt").textContent = s.mustN ? `Must-haves: ${s.mustB}/${s.mustN}` : "";
+  if (document.activeElement !== $("#nA")) $("#nA").value = settings.nameA || "";
+  if (document.activeElement !== $("#nB")) $("#nB").value = settings.nameB || "";
+
+  const counts = {}; for (const it of all) if (!OFF.has(it.status) && it.status !== "Bought") counts[it.room] = (counts[it.room] || 0) + 1;
+  $("#tabs").innerHTML = ["All", ...ROOMS].map(r => {
+    const c = r === "All" ? Object.values(counts).reduce((a, b) => a + b, 0) : (counts[r] || 0);
+    return `<button class="tab" role="tab" data-tab="${esc(r)}" aria-selected="${tab === r}">${esc(r)}<span class="c num">${c}</span></button>`;
+  }).join("");
+  $("#pf").innerHTML = [["All", "All"], ...PRIOS].map(([v, l]) => `<button data-pf="${v}" aria-pressed="${prioF === v}">${l}</button>`).join("");
+}
+
+function rowHTML(it) {
+  const links = it.links || [];
+  const isOpen = open.has(it.id);
+  const meta = [];
+  if (links.length) meta.push(links.length === 1 ? `<a href="${esc(links[0].url)}" target="_blank" rel="noopener noreferrer">${esc(links[0].label || host(links[0].url) || "Link")} ↗</a>` : `${links.length} links`);
+  if (it.store) meta.push(esc(it.store));
+  if (it.who) meta.push(esc(whoLabel(it.who)));
+  const paid = Number(it.paid) || 0;
+  const priceTxt = it.status === "Bought" && paid ? `${eur(paid)}<small>paid</small>` : `${eur(estOf(it))}<small>est.</small>`;
+  let h = `<div class="row">
+    <button class="pill" data-act="cycle" data-s="${esc(it.status)}" title="Click to move to the next step"><span class="dot"></span>${esc(it.status)}</button>
+    <div class="nm">${itemImage(it) ? `<img class="th" data-zoom="1" data-cap="${esc(it.name)}" data-href="${esc(((it.links || [])[0] || {}).url || "")}" src="${esc(itemImage(it))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}<div class="nmt">${esc(it.name)}${(Number(it.qty) || 1) > 1 ? `<span class="q num">×${esc(it.qty)}</span>` : ""}${meta.length ? `<span class="meta">${meta.join(" · ")}</span>` : ""}</div></div>
+    <div class="seg prio" role="group" aria-label="Priority">${PRIOS.map(([v, l]) => `<button data-act="prio" data-v="${v}" aria-pressed="${it.priority === v}">${l}</button>`).join("")}</div>
+    <div class="price">${priceTxt}</div>
+    <button class="exp" data-act="toggle" aria-expanded="${isOpen}" aria-label="Show details">⌄</button>
+  </div>`;
+  if (isOpen) {
+    const [nA, nB] = names();
+    h += `<div class="detail">
+      <div><h3>Status</h3><div class="seg st" role="group">${STATUSES.map(s => `<button data-act="status" data-v="${esc(s)}" aria-pressed="${it.status === s}">${esc(s)}</button>`).join("")}</div></div>
+      <div><h3>Links</h3><div class="links">${links.length ? links.map((l, i) => `<div class="lnk">${l.image ? `<img class="lth" data-zoom="1" data-cap="${esc(l.label || it.name)}" data-href="${esc(l.url)}" src="${esc(l.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}<a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.label || host(l.url) || l.url)} ↗</a><span class="host">${esc(l.label ? host(l.url) : "")}</span><button class="x" data-act="rmlink" data-i="${i}" aria-label="Remove link">✕</button></div>`).join("") : `<span class="hint">No links yet. Paste the ones you've found online below; you can add as many as you like to compare.</span>`}
+        <form class="addlink" data-act="addlink"><input id="lu-${esc(it.id)}" type="url" placeholder="Paste a link" required><input id="ll-${esc(it.id)}" placeholder="Label, e.g. IKEA grey 3-seat"><button class="btn primary">Add link</button></form>
+      </div></div>
+      <div class="fields">
+        <div class="fld wide"><label for="nm-${esc(it.id)}">Item</label><input id="nm-${esc(it.id)}" data-f="name" value="${esc(it.name)}"></div>
+        <div class="fld"><label for="qt-${esc(it.id)}">Qty</label><input id="qt-${esc(it.id)}" data-f="qty" inputmode="numeric" value="${esc(it.qty ?? 1)}"></div>
+        <div class="fld"><label for="es-${esc(it.id)}">Est. price each (${esc(sym().trim())})</label><input id="es-${esc(it.id)}" data-f="est" inputmode="decimal" value="${esc(dispVal(it.est))}"></div>
+        <div class="fld"><label for="pd-${esc(it.id)}">Price paid, total (${esc(sym().trim())})</label><input id="pd-${esc(it.id)}" data-f="paid" inputmode="decimal" value="${esc(dispVal(it.paid))}" placeholder="—"></div>
+        <div class="fld"><label for="sr-${esc(it.id)}">Store</label><input id="sr-${esc(it.id)}" data-f="store" value="${esc(it.store || "")}"></div>
+        <div class="fld wide"><label>Who's on it</label><div class="seg" role="group">${[["A", nA], ["B", nB], ["Both", "Both"]].map(([v, l]) => `<button data-act="who" data-v="${v}" aria-pressed="${it.who === v}">${esc(l)}</button>`).join("")}</div></div>
+        <div class="fld full"><label for="nt-${esc(it.id)}">Notes</label><textarea id="nt-${esc(it.id)}" data-f="notes">${esc(it.notes || "")}</textarea></div>
+      </div>
+      <div class="dfoot"><span class="hint">Room: ${esc(it.room)}</span><button class="del ${armed.has(it.id) ? "arm" : ""}" data-act="del">${armed.has(it.id) ? "Click again to delete" : "Delete item"}</button></div>
+    </div>`;
+  }
+  return h;
+}
+
+function render() {
+  renderHeader();
+  const box = $("#list");
+  if (!loaded) return;
+  const all = sorted();
+  const ae = document.activeElement, fid = ae && box.contains(ae) && ae.id ? ae.id : null;
+  const fval = fid ? ae.value : null, fsel = fid && "selectionStart" in ae ? [ae.selectionStart, ae.selectionEnd] : null;
+
+  const rooms = tab === "All" ? ROOMS : [tab];
+  let out = "";
+  if (!items.size) out += `<div class="empty">No items yet. Add the first one with the box under any room.</div>`;
+  for (const r of rooms) {
+    const inRoom = all.filter(it => it.room === r);
+    const vis = inRoom.filter(visible);
+    if (tab === "All" && !vis.length && (query || prioF !== "All" || hideDone)) continue;
+    const s = stats(inRoom);
+    out += `<section class="room"><div class="roomhead"><h2>${esc(r)}</h2><span class="rs num">${s.bought}/${s.n} bought · ${eur(s.left)} to go</span></div>`;
+    out += vis.map(it => `<div class="item${it.status === "Bought" ? " done" : ""}${OFF.has(it.status) ? " off" : ""}" data-id="${esc(it.id)}">${rowHTML(it)}</div>`).join("");
+    if (!vis.length) out += `<div class="hint" style="padding:10px 0">Nothing matches here.</div>`;
+    out += `<form class="addrow" data-act="additem" data-room="${esc(r)}"><input id="add-${r.replace(/\W/g, "")}" placeholder="Add an item to ${esc(r)}…" aria-label="New item in ${esc(r)}"><button class="btn">Add</button></form></section>`;
+  }
+  box.innerHTML = out;
+  if (fid) { const el = document.getElementById(fid); if (el) { el.value = fval; el.focus(); if (fsel) try { el.setSelectionRange(...fsel); } catch {} } }
+}
+
+/* ---------- list events ---------- */
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-tab]"); if (t) { tab = t.dataset.tab; render(); return; }
+  const p = e.target.closest("[data-pf]"); if (p) { prioF = p.dataset.pf; render(); return; }
+  const b = e.target.closest("button[data-act]"); if (!b) return;
+  const itemEl = b.closest(".item"); const id = itemEl && itemEl.dataset.id; const it = id && items.get(id);
+  const act = b.dataset.act;
+  if (act === "toggle") { open.has(id) ? open.delete(id) : open.add(id); armed.delete(id); render(); return; }
+  if (!it) return;
+  if (act === "cycle") { const i = MAIN.indexOf(it.status); patch(id, { status: MAIN[(i + 1) % MAIN.length] }); }
+  if (act === "prio") patch(id, { priority: b.dataset.v });
+  if (act === "status") patch(id, { status: b.dataset.v });
+  if (act === "who") patch(id, { who: it.who === b.dataset.v ? "" : b.dataset.v });
+  if (act === "rmlink") { const l = [...(it.links || [])]; l.splice(+b.dataset.i, 1); patch(id, { links: l }); }
+  if (act === "del") {
+    if (!armed.has(id)) { armed.add(id); render(); setTimeout(() => { if (armed.delete(id)) render(); }, 4000); return; }
+    armed.delete(id); open.delete(id); items.delete(id); render();
+    write("deleteItem", id); toast(`Deleted "${it.name}"`);
+  }
+});
+document.addEventListener("submit", e => {
+  const f = e.target;
+  if (f.id === "qaForm") return;
+  e.preventDefault();
+  if (f.dataset.act === "addlink") {
+    const id = f.closest(".item").dataset.id, it = items.get(id);
+    let url = f.querySelector('input[type=url]').value.trim(); const label = f.querySelectorAll("input")[1].value.trim();
+    if (!url) return; if (!/^https?:[/][/]/i.test(url)) url = "https:\/\/" + url;
+    try { new URL(url); } catch { toast("That doesn't look like a web address."); return; }
+    const p = { links: [...(it.links || []), { url, label }] };
+    if (!["Bought", "Ordered", "Chosen"].includes(it.status)) p.status = "Chosen";
+    patch(id, p);
+    toast("Link added");
+  }
+  if (f.dataset.act === "additem") {
+    const inp = f.querySelector("input"); const name = inp.value.trim(); if (!name) return;
+    const it = { id: newId(), room: f.dataset.room, name, priority: "Important", qty: 1, est: null, paid: null, status: "To choose", who: "", store: "", notes: "", links: [], order: Date.now() };
+    items.set(it.id, it); open.add(it.id); inp.value = ""; render();
+    write("addItem", it); toast(`Added "${name}"`);
+  }
+});
+document.addEventListener("change", e => {
+  const el = e.target;
+  if (el.dataset.f) {
+    const id = el.closest(".item").dataset.id, f = el.dataset.f;
+    let v = el.value.trim();
+    if (f === "qty") v = Math.max(0, Math.round(num(v) ?? 1));
+    else if (f === "est" || f === "paid") v = toKRW(numIn(v));
+    else if (f === "name" && !v) { render(); return; }
+    const p = { [f]: v };
+    if (f === "paid" && v && items.get(id).status !== "Bought") p.status = "Bought";
+    patch(id, p);
+  }
+  if (el.id === "budget") saveSetting("budget", toKRW(numIn(el.value)));
+  if (el.id === "nA") saveSetting("nameA", el.value.trim());
+  if (el.id === "nB") saveSetting("nameB", el.value.trim());
+  if (el.id === "hideDone") { hideDone = el.checked; render(); }
+});
+$("#q").addEventListener("input", e => { query = e.target.value.trim().toLowerCase(); render(); });
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-cur]"); if (!b) return;
+  settings.currency = b.dataset.cur; render(); renderQA();
+  write("saveSettings", { currency: b.dataset.cur });
+  toast("Prices now shown in " + b.dataset.cur);
+});
+$("#gearBtn").addEventListener("click", () => {
+  const s = $("#settingsBox"); s.open = !s.open;
+  if (s.open) s.scrollIntoView({ behavior: "smooth", block: "center" });
+});
+$("#refreshBtn").addEventListener("click", () => { load(true); toast("Refreshed"); });
+
+/* ---------- quick add from a link (Gemini, server side) ---------- */
+let qa = null, qaRun = 0;
+function slugName(url) {
+  try {
+    const u = new URL(url);
+    const segs = u.pathname.split("/").filter(Boolean).reverse();
+    const s = segs.find(x => /[a-z]{3,}/i.test(x) && !/^(p|dp|it|en|kr|ko|product|products|item|goods|vp|gp)$/i.test(x)) || "";
+    return decodeURIComponent(s).replace(/\.(html?|php|aspx?)$/i, "").replace(/[-_+]+/g, " ").replace(/\b[a-z]?\d{5,}\b/gi, "").replace(/\s+/g, " ").trim().slice(0, 60);
+  } catch { return ""; }
+}
+function storeOf(url) { const h = host(url).split(".").filter(x => !/^(it|com|co|kr|net|uk|de|fr|es|eu|shop|store|www|m)$/i.test(x)); const s = h[h.length - 1] || ""; return s ? s[0].toUpperCase() + s.slice(1) : ""; }
+
+async function runQuickAdd(url, extra, imageHint) {
+  const run = ++qaRun;
+  const base = { name: slugName(url), room: tab !== "All" ? tab : "Living Room", priority: "Important", price: null, qty: 1, store: storeOf(url), match: "", summary: "", image: imageHint || "" };
+  qa = { url, step: "work", d: base, warn: "" }; renderQA();
+  try {
+    const r = await api("analyzeLink", url, extra || "");
+    if (run !== qaRun || !qa) return;
+    const d = { ...base };
+    if (r && r.image) d.image = String(r.image);
+    if (r && r.unknown) {
+      if (r.store) d.store = String(r.store).slice(0, 40);
+      qa.d = d; qa.step = "preview";
+      qa.warn = "This shop blocks automatic reading, so we can't see what the product is. Open the product page, copy the title and price into the box above, then press Sort it again. Or fill in the fields below yourself.";
+      $("#qaMore").open = true;
+      renderQA();
+      setTimeout(() => { try { $("#qaText").focus(); } catch (e) {} }, 50);
+      return;
+    }
+    if (r && typeof r === "object") {
+      if (r.name) d.name = String(r.name).slice(0, 80);
+      if (ROOMS.includes(r.room)) d.room = r.room;
+      if (PRIOS.some(p => p[0] === r.priority)) d.priority = r.priority;
+      const p = num(r.price); if (p != null && p > 0) d.price = p;
+      const q = parseInt(r.qty); if (q > 0 && q < 200) d.qty = q;
+      if (r.store) d.store = String(r.store).slice(0, 40);
+      if (r.match_id && items.has(String(r.match_id))) { d.match = String(r.match_id); d.room = items.get(d.match).room; }
+      if (r.summary) d.summary = String(r.summary).slice(0, 140);
+    }
+    qa.d = d; qa.step = "preview";
+    if (r.pageRead !== "page" && d.price == null) {
+      qa.warn = "This shop blocks automatic reading and the price wasn't found online. Open the product page, copy the title and price into the box above (\u201cAdd the product title or price yourself\u201d), then press Sort it again \u2014 or just fill in the fields below.";
+      $("#qaMore").open = true;
+    } else if (r.pageRead === "web") {
+      qa.warn = "This shop blocks automatic reading, so Gemini looked the product up on Google. Double-check the name and price.";
+    }
+    renderQA();
+  } catch (e) {
+    if (run !== qaRun || !qa) return;
+    qa.step = "preview"; qa.warn = errText(e) + " You can fill in the details below.";
+    renderQA();
+  }
+}
+
+function renderQA() {
+  const out = $("#qaOut");
+  if (!qa) { out.innerHTML = ""; return; }
+  if (qa.step === "work") {
+    out.innerHTML = `<div class="qastat"><span class="spin"></span>Reading the page and working out where it goes… <button class="btn" type="button" data-qa="cancel" style="margin-left:auto">Cancel</button></div>`;
+    return;
+  }
+  const d = qa.d, roomItems = sorted().filter(it => it.room === d.room);
+  out.innerHTML = `<div class="prev">
+    ${d.image ? `<img class="pth" data-zoom="1" data-cap="${esc(d.name)}" data-href="${esc(qa.url)}" src="${esc(d.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}
+    <div class="src">From <a href="${esc(qa.url)}" target="_blank" rel="noopener noreferrer">${esc(host(qa.url) || qa.url)} ↗</a>${d.summary ? " · " + esc(d.summary) : ""}</div>
+    ${qa.warn ? `<div class="qwarn">${esc(qa.warn)}</div>` : ""}
+    <div class="fields">
+      <div class="fld wide"><label for="qaName">Item</label><input id="qaName" data-qf="name" value="${esc(d.name)}" placeholder="What is it?"></div>
+      <div class="fld"><label for="qaPrice">Price each (${esc(sym().trim())})</label><input id="qaPrice" data-qf="price" inputmode="decimal" value="${esc(dispVal(d.price))}" placeholder="—"></div>
+      <div class="fld"><label for="qaQty">Qty</label><input id="qaQty" data-qf="qty" inputmode="numeric" value="${esc(d.qty)}"></div>
+      <div class="fld full"><label>Room</label><div class="seg st" role="group">${ROOMS.map(r => `<button type="button" data-qa="room" data-v="${esc(r)}" aria-pressed="${d.room === r}">${esc(r)}</button>`).join("")}</div></div>
+      <div class="fld wide"><label>Priority</label><div class="seg prio" role="group">${PRIOS.map(([v, l]) => `<button type="button" data-qa="prio" data-v="${v}" aria-pressed="${d.priority === v}">${l}</button>`).join("")}</div></div>
+      <div class="fld wide"><label for="qaStore">Store</label><input id="qaStore" data-qf="store" value="${esc(d.store)}"></div>
+      <div class="fld full"><label for="qaMatch">Add as</label><select id="qaMatch" data-qf="match">
+        <option value="">A new item in ${esc(d.room)}</option>
+        ${roomItems.map(it => `<option value="${esc(it.id)}" ${d.match === it.id ? "selected" : ""}>A link for "${esc(it.name)}"${(it.links || []).length ? ` (has ${(it.links || []).length})` : ""}</option>`).join("")}
+      </select></div>
+    </div>
+    <div class="acts"><button class="btn primary" type="button" data-qa="save">${d.match ? "Attach link" : "Add to list"}</button><button class="btn" type="button" data-qa="cancel">Discard</button>
+      <span class="hint">${d.match ? "The link is added to the existing item and it's marked as Chosen." : ""}</span></div>
+  </div>`;
+}
+
+$("#qaForm").addEventListener("submit", e => {
+  e.preventDefault();
+  let url = $("#qaUrl").value.trim(); if (!url) return;
+  if (!/^https?:[/][/]/i.test(url)) url = "https:\/\/" + url;
+  try { new URL(url); } catch { toast("That doesn't look like a web address."); return; }
+  runQuickAdd(url, $("#qaText").value.trim());
+});
+$("#qaOut").addEventListener("input", e => {
+  const f = e.target.dataset.qf; if (!f || !qa) return;
+  const v = e.target.value;
+  qa.d[f] = f === "price" ? toKRW(numIn(v)) : f === "qty" ? (parseInt(v) || 1) : v;
+});
+$("#qaOut").addEventListener("change", e => { if (e.target.dataset.qf === "match") renderQA(); });
+$("#qaOut").addEventListener("click", e => {
+  const b = e.target.closest("[data-qa]"); if (!b || !qa) return;
+  e.stopPropagation();
+  const a = b.dataset.qa;
+  if (a === "cancel") { qaRun++; qa = null; renderQA(); return; }
+  if (a === "room") { qa.d.room = b.dataset.v; if (qa.d.match && items.get(qa.d.match)?.room !== qa.d.room) qa.d.match = ""; renderQA(); return; }
+  if (a === "prio") { qa.d.priority = b.dataset.v; renderQA(); return; }
+  if (a === "save") {
+    const d = qa.d, name = (d.name || "").trim() || host(qa.url) || "New item";
+    const link = { url: qa.url, label: d.match ? name : (d.store || ""), image: d.image || "" };
+    if (d.match && items.has(d.match)) {
+      const it = items.get(d.match);
+      const p = { links: [...(it.links || []), link] };
+      if (d.image && !it.image) p.image = d.image;
+      if (d.price != null) p.est = d.price;
+      if (!it.store && d.store) p.store = d.store;
+      if (it.status === "To choose") p.status = "Chosen";
+      if (d.summary && !it.notes) p.notes = d.summary;
+      open.add(d.match); tab = it.room;
+      patch(d.match, p);
+      toast(`Link attached to "${it.name}"`);
+    } else {
+      const it = { id: newId(), room: d.room, name, priority: d.priority, qty: d.qty || 1, est: d.price, paid: null, status: "Chosen", who: "", store: d.store || "", notes: d.summary || "", links: [link], image: d.image || "", order: Date.now() };
+      items.set(it.id, it); open.add(it.id); tab = d.room;
+      write("addItem", it);
+      toast(`Added "${name}" to ${d.room}`);
+    }
+    qa = null; $("#qaUrl").value = ""; $("#qaText").value = ""; $("#qaMore").open = false;
+    renderQA(); render();
+  }
+});
+
+/* ---------- "+ Casa" bookmark button ---------- */
+// Runs on the product page in the user's own browser: takes title, price and nearby text, then opens this app.
+function casaBookmarklet(APP) {
+  var d = document;
+  var g = function (s) { var e = d.querySelector(s); return e ? String(e.getAttribute("content") || e.innerText || "").trim() : ""; };
+  var t = g('meta[property="og:title"]') || d.title || "";
+  var p = g('meta[property="product:price:amount"]') || g('meta[property="og:price:amount"]') || g('[itemprop="price"]');
+  var b = String((d.body && d.body.innerText) || "").replace(/\s+/g, " ");
+  var i = t ? b.indexOf(t.slice(0, 15)) : -1;
+  if (i < 0) { var m = b.search(/[0-9][0-9,.]{3,}\s*(원|won|₩)/i); i = m > 200 ? m - 200 : 0; }
+  var x = b.slice(i, i + 500);
+  var u = APP + "?u=" + encodeURIComponent(location.href) + "&t=" + encodeURIComponent(t.slice(0, 200)) + "&p=" + encodeURIComponent(p) + "&x=" + encodeURIComponent(x);
+  window.open(u, "_blank");
+}
+let bmReady = false;
+function setupBookmarklet(appUrl) {
+  if (bmReady || !$("#bmLink")) return; bmReady = true;
+  const code = "(" + casaBookmarklet.toString() + ")(" + JSON.stringify(appUrl) + ");";
+  const a = $("#bmLink");
+  a.href = "javascript:" + encodeURIComponent(code);
+  $("#bmBox").hidden = false;
+}
+document.addEventListener("click", e => { if (e.target.closest("#bmLink")) { e.preventDefault(); toast("Drag this button to your bookmarks bar instead of clicking it."); } });
+
+function readLaunchParams() {
+  try {
+    if (!(window.google && google.script && google.script.url)) return;
+    google.script.url.getLocation(loc => {
+      const p = (loc && loc.parameter) || {};
+      if (!p.u) return;
+      const notes = [p.t, p.p ? "Price: " + p.p : "", p.x].filter(Boolean).join("\n");
+      $("#qaUrl").value = p.u; $("#qaText").value = notes;
+      runQuickAdd(p.u, notes, p.i || "");
+    });
+  } catch (e) {}
+}
+
+/* ---------- big photo preview ---------- */
+function bigSrc(src) {
+  // Ask the shop's image server for a larger version when the address carries a width.
+  return String(src).replace(/([?&])w=\d+/, "$1w=1200");
+}
+function openPhoto(img) {
+  const lb = $("#lb");
+  $("#lbImg").src = bigSrc(img.getAttribute("src"));
+  $("#lbCap").textContent = img.dataset.cap || "";
+  const a = $("#lbLink");
+  if (img.dataset.href) { a.href = img.dataset.href; a.hidden = false; } else a.hidden = true;
+  lb.hidden = false;
+  $("#lbClose").focus();
+}
+function closePhoto() { $("#lb").hidden = true; $("#lbImg").removeAttribute("src"); }
+document.addEventListener("click", e => {
+  const img = e.target.closest("img[data-zoom]");
+  if (img) { e.preventDefault(); e.stopPropagation(); openPhoto(img); return; }
+  if (e.target.id === "lb" || e.target.closest("#lbClose")) closePhoto();
+}, true);
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#lb").hidden) closePhoto(); });
+
+/* ---------- boot ---------- */
+render();
+load(true);
+readLaunchParams();
+setInterval(() => { if (!document.hidden) load(); }, POLL_MS);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
+
+</script>
+</body>
+</html>

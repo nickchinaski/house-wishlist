@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>House Wishlist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600&display=swap">
+<style>
+body { margin: 0; }
+/* Layout: one readable column; numbered steps as the spine, a copyable AI prompt, then quick answers. */
+:root {
+  --bg: #F3F6F5; --card: #FFFFFF; --ink: #17222A; --muted: #56656C; --line: #D6DFDB;
+  --accent: #2C6B5B; --accent-ink: #FFFFFF; --soft: #E2F0EA; --warn: #8A6400; --warn-bg: #FFF4CF;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0F1518; --card: #172026; --ink: #E6ECEA; --muted: #9AA8AE; --line: #2A3740;
+  --accent: #6BC0A5; --accent-ink: #0D1B16; --soft: #16302A; --warn: #EBC35A; --warn-bg: #3A3014; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0F1518; --card: #172026; --ink: #E6ECEA; --muted: #9AA8AE; --line: #2A3740;
+  --accent: #6BC0A5; --accent-ink: #0D1B16; --soft: #16302A; --warn: #EBC35A; --warn-bg: #3A3014; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.6 var(--body); }
+.wrap { max-width: 760px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 36px 72px; }
+h1 { font-family: var(--display); font-weight: 800; font-size: clamp(34px, 7vw, 52px); line-height: 1; letter-spacing: -0.03em; margin: 0; }
+h2 { font-family: var(--display); font-weight: 700; font-size: 26px; letter-spacing: -0.01em; margin: 48px 0 6px; text-wrap: balance; }
+h3 { font-size: 18px; margin: 0 0 4px; }
+p { margin: 0 0 10px; }
+.lead { font-size: 19px; color: var(--muted); margin: 12px 0 20px; max-width: 60ch; }
+.needs { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 4px 12px; font-size: 14px; font-weight: 500; }
+.steps { list-style: none; padding: 0; margin: 18px 0 0; counter-reset: s; display: grid; gap: 12px; }
+.steps > li { counter-increment: s; display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+.steps > li::before { content: counter(s); width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); font: 800 22px var(--display); display: grid; place-items: center; }
+.steps ul { margin: 6px 0 0; padding-left: 18px; }
+.steps li li { margin: 3px 0; }
+.btn { display: inline-flex; align-items: center; gap: 6px; background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 10px; padding: 9px 14px; font: 600 15px var(--body); text-decoration: none; cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+.btn.sm { padding: 4px 10px; font-size: 14px; border-radius: 8px; vertical-align: 1px; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 16px; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 14px; }
+.path { font-family: var(--mono); font-size: 14px; background: var(--soft); border-radius: 6px; padding: 1px 6px; white-space: normal; }
+.who { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--warn); background: var(--warn-bg); border-radius: 6px; padding: 1px 7px; margin-left: 6px; vertical-align: 2px; }
+.note { background: var(--soft); border-radius: 10px; padding: 10px 14px; font-size: 15px; margin-top: 8px; }
+.prompt { position: relative; margin-top: 14px; }
+.prompt pre { margin: 0; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; font: 13.5px/1.55 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 420px; overflow: auto; }
+.prompt .btn { position: absolute; top: 10px; right: 10px; }
+.copied { font-size: 13px; color: var(--accent); margin-top: 6px; min-height: 20px; }
+details { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; margin-top: 10px; }
+summary { cursor: pointer; font-weight: 600; }
+details p { margin: 8px 0 0; color: var(--muted); }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.small { font-size: 14px; color: var(--muted); }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <h1>🏠 House Wishlist</h1>
+  <p class="lead">La lista di tutto quello che serve per la casa nuova, stanza per stanza, con budget, foto e link. Vedi un prodotto online, clicchi un'icona e finisce nella lista, già con nome, prezzo e stanza.</p>
+  <div class="hero-actions">
+    <a class="btn" href="https://docs.google.com/spreadsheets/d/1nNgXQRwBtEuTrC0G84SEBZ5U2WfVK6_cUf2_ficSf08/copy" target="_blank" rel="noopener">1 · Crea la mia lista ↗</a>
+    <a class="btn ghost" href="https://drive.google.com/uc?export=download&amp;id=1M59XeUV0NgWn7CxW5uH9lDWO0PFTS8j6" target="_blank" rel="noopener">⬇ Scarica l'estensione per Chrome</a>
+  </div>
+  <div class="needs">
+    <span class="chip">Un account Google</span>
+    <span class="chip">Chrome sul computer</span>
+    <span class="chip">15 minuti, una volta sola</span>
+    <span class="chip">Gratis</span>
+  </div>
+
+  <h2>Fallo a mano</h2>
+  <p class="small">Sei passaggi. Dove vedi <span class="who">tu</span> devi cliccare tu: sono le autorizzazioni di Google.</p>
+  <ol class="steps">
+    <li><div>
+      <h3>Copia la lista</h3>
+      <p>Apri questo link e clicca <b>Crea una copia</b> (Make a copy). Insieme al foglio viene copiata anche l'app.</p>
+      <p><a class="btn" href="https://docs.google.com/spreadsheets/d/1nNgXQRwBtEuTrC0G84SEBZ5U2WfVK6_cUf2_ficSf08/copy" target="_blank" rel="noopener">Crea la mia copia ↗</a> <a class="btn sm ghost" href="https://drive.google.com/drive/my-drive" target="_blank" rel="noopener">Apri il mio Drive ↗</a></p>
+      <p class="small">La copia si chiama "Copia di House Wishlist" e la ritrovi sempre nel tuo Google Drive.</p>
+    </div></li>
+    <li><div>
+      <h3>Prepara la lista <span class="who">tu</span></h3>
+      <ul>
+        <li>Nella copia premi <b>F5</b> (ricarica). In alto compare il menu <span class="path">🏠 House Wishlist</span>.</li>
+        <li>Clicca <span class="path">🏠 House Wishlist → 1. Set up the list</span>.</li>
+        <li>Google chiede il permesso: <b>Continua</b> → scegli il tuo account → <b>Avanzate</b> → <b>Vai a House Wishlist (non sicuro)</b> → <b>Consenti</b>. "Non sicuro" vuol dire solo che lo script non è stato revisionato da Google: gira nel tuo account e usa solo il tuo foglio.</li>
+        <li>Rilancia <span class="path">1. Set up the list</span>: compaiono le schede <b>Items</b>, <b>Settings</b> e <b>Summary</b> con 90 cose già pronte.</li>
+      </ul>
+    </div></li>
+    <li><div>
+      <h3>Prendi la chiave gratuita di Gemini <span class="who">tu</span></h3>
+      <ul>
+        <li><a class="btn sm" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Apri Google AI Studio ↗</a> → <b>Create API key</b> → copiala.</li>
+        <li>Nel foglio: <span class="path">🏠 House Wishlist → 2. Set Gemini API key</span> → incolla → OK.</li>
+        <li>Prova con <span class="path">🏠 House Wishlist → Test Gemini</span>: deve dire <b>Gemini works</b>.</li>
+      </ul>
+      <p class="note">La chiave resta nelle impostazioni dello script, non nel foglio. Gemini serve a capire nome, prezzo e stanza dei prodotti; il piano gratuito basta e avanza.</p>
+    </div></li>
+    <li><div>
+      <h3>Pubblica l'app</h3>
+      <ul>
+        <li>Nel foglio: <span class="path">Estensioni → Apps Script</span>.</li>
+        <li>In alto a destra: <span class="path">Esegui il deployment → Nuovo deployment</span> (Deploy → New deployment).</li>
+        <li>Clicca l'ingranaggio ⚙ accanto a "Seleziona tipo" → <b>App web</b>.</li>
+        <li><b>Esegui come:</b> Utente che accede all'app web · <b>Chi ha accesso:</b> Chiunque abbia un account Google.</li>
+        <li><b>Esegui il deployment</b> e copia l'<b>URL dell'app web</b>: finisce con <span class="path">/exec</span>. È il link della tua lista: salvalo nei preferiti, anche sul telefono.</li>
+      </ul>
+      <p class="note">Se l'app all'inizio resta su "Loading", aspetta un minuto e ricarica: Google ci mette un attimo a pubblicarla.</p>
+    </div></li>
+    <li><div>
+      <h3>Installa l'estensione per Chrome</h3>
+      <ul>
+        <li><a class="btn sm" href="https://drive.google.com/uc?export=download&amp;id=1M59XeUV0NgWn7CxW5uH9lDWO0PFTS8j6" target="_blank" rel="noopener">⬇ Scarica l'estensione</a> poi estrai lo zip (tasto destro → <b>Estrai tutto</b>).</li>
+        <li>Fai doppio clic su <b>INSTALLA House Wishlist</b> e segui i 3 passaggi che compaiono (accendi "Modalità sviluppatore", trascina la cartella dentro Chrome, fissa l'icona 🏠).</li>
+        <li>Su Mac o se il doppio clic non fa niente: apri la pagina estensioni di Chrome <button class="btn sm ghost" type="button" data-copy="chrome://extensions">Copia chrome://extensions</button> (incollala nella barra degli indirizzi), accendi "Modalità sviluppatore" e trascina dentro la cartella <b>casa-extension</b>.</li>
+        <li>Al primo clic sull'icona ti chiede il link della tua lista: incolla l'URL che finisce con <span class="path">/exec</span>.</li>
+      </ul>
+    </div></li>
+    <li><div>
+      <h3>Se la usate in due</h3>
+      <ul>
+        <li>Nel foglio: <b>Condividi</b> → email dell'altra persona → <b>Editor</b>.</li>
+        <li>Mandale il link <span class="path">/exec</span> e lo zip dell'estensione. Non le serve una sua chiave Gemini: usa la tua.</li>
+      </ul>
+    </div></li>
+  </ol>
+
+  <h2>Per i pigri: fallo fare a un'AI</h2>
+  <p>Se usi un assistente che può controllare il browser (per esempio Claude con l'estensione per Chrome), copia questo testo e incollaglielo. Farà i passaggi da 1 a 4 e si fermerà quando servono i tuoi clic. L'estensione (passaggio 5) la installi tu: sono tre clic.</p>
+  <div class="prompt">
+    <button class="btn" id="copyBtn" type="button">Copia il testo</button>
+<pre id="prompt">Sei un assistente con accesso al mio browser Chrome. Aiutami a configurare "House Wishlist", una lista per la casa nuova basata su Google Sheets e Gemini. Lavora un passo alla volta, dimmi cosa stai facendo e FERMATI chiedendomi di intervenire dove c'è scritto [TOCCA A ME].
+
+1. Apri https://docs.google.com/spreadsheets/d/1nNgXQRwBtEuTrC0G84SEBZ5U2WfVK6_cUf2_ficSf08/copy e clicca "Make a copy" / "Crea una copia".
+2. Nella copia ricarica la pagina e aspetta il menu "🏠 House Wishlist". Aprilo e scegli "1. Set up the list".
+3. [TOCCA A ME] Google mostrerà "Authorization required". Fermati e chiedimi di approvare io (Continua → account → Avanzate → Vai a House Wishlist → Consenti). Quando ti dico "fatto", se non ci sono ancora le schede Items, Settings e Summary, rilancia "1. Set up the list".
+4. [TOCCA A ME] Apri https://aistudio.google.com/apikey. Non creare e non copiare chiavi tu: chiedimi di creare una chiave e di copiarla.
+5. Torna al foglio, menu "🏠 House Wishlist" → "2. Set Gemini API key". [TOCCA A ME] Lascia che sia io a incollare la chiave e a premere OK. Poi esegui "🏠 House Wishlist" → "Test Gemini" e controlla che risponda "Gemini works".
+6. Pubblica l'app: menu Estensioni → Apps Script. Nell'editor: Deploy (Esegui il deployment) → New deployment (Nuovo deployment) → icona ingranaggio → Web app. Imposta "Execute as: User accessing the web app" e "Who has access: Anyone with Google account", poi Deploy. [TOCCA A ME] se compare una richiesta di autorizzazione.
+7. Copia l'URL dell'app web (finisce con /exec), aprilo in una nuova scheda e controlla che si veda la lista con le stanze (Living Room, Kitchen, …). Se resta su "Loading", aspetta un minuto e ricarica.
+8. Alla fine dammi l'URL /exec e ricordami di: salvarlo nei preferiti; scaricare l'estensione da https://drive.google.com/uc?export=download&amp;id=1M59XeUV0NgWn7CxW5uH9lDWO0PFTS8j6 , estrarre lo zip, fare doppio clic su "INSTALLA House Wishlist" e incollare questo URL al primo clic sull'icona; controllare la valuta dalla rotellina ⚙ in alto nell'app (di base è l'euro).
+
+Regole: non inserire tu password, chiavi API o dati di pagamento; non cambiare impostazioni di sicurezza del mio account; non condividere il foglio con nessuno senza chiedermelo.</pre>
+  </div>
+  <div class="copied" id="copied" aria-live="polite"></div>
+
+  <h2>Domande veloci</h2>
+  <details><summary>Costa qualcosa?</summary><p>No. Google Sheets, Apps Script e il piano gratuito di Gemini bastano. Nessun abbonamento.</p></details>
+  <details><summary>Chi vede la mia lista?</summary><p>Solo tu e chi aggiungi come Editor al foglio. Ogni copia è separata: la tua lista è sul tuo Google Drive.</p></details>
+  <details><summary>In che valuta sono i prezzi?</summary><p>In euro. Dalla rotellina ⚙ in alto nell'app puoi sceglierne un'altra ($, £, ₩, ¥ e altre): la conversione usa i cambi di Google Finance del giorno. Le stime iniziali sono indicative, sostituiscile con i prezzi veri.</p></details>
+  <details><summary>Un negozio non si fa leggere (prezzo vuoto).</summary><p>Alcuni negozi bloccano la lettura automatica. Usa l'icona 🏠 dell'estensione mentre sei sulla pagina del prodotto: legge la pagina dal tuo browser e funziona anche lì.</p></details>
+  <details><summary>Le foto non si vedono nel foglio Google.</summary><p>In alto al foglio compare una barra gialla "Consenti l'accesso" (Allow access): cliccala una volta. Nell'app le foto si vedono comunque.</p></details>
+  <details><summary>"Gemini's free limit is reached".</summary><p>Hai fatto molte richieste di fila: aspetta un minuto e riprova.</p></details>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+<script>
+// Small copy buttons (for addresses a web page can't open directly, like chrome://extensions).
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-copy]"); if (!b) return;
+  const t = document.getElementById("toast");
+  try { await navigator.clipboard.writeText(b.dataset.copy); t.textContent = "Copiato: " + b.dataset.copy + " — incollalo nella barra degli indirizzi di Chrome"; }
+  catch (err) { t.textContent = "Scrivi a mano: " + b.dataset.copy; }
+  t.hidden = false; clearTimeout(t._h); t._h = setTimeout(() => t.hidden = true, 3500);
+});
+document.getElementById("copyBtn").addEventListener("click", async () => {
+  const text = document.getElementById("prompt").innerText;
+  const msg = document.getElementById("copied");
+  try {
+    await navigator.clipboard.writeText(text);
+    msg.textContent = "Copiato. Incollalo nel tuo assistente AI.";
+  } catch (e) {
+    const r = document.createRange(); r.selectNodeContents(document.getElementById("prompt"));
+    const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    msg.textContent = "Testo selezionato: premi Ctrl+C per copiarlo.";
+  }
+});
+</script>
+
+</body>
+</html>
