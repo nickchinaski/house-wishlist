@@ -39,6 +39,7 @@ p { margin: 0 0 10px; }
 .steps li li { margin: 3px 0; }
 .btn { display: inline-flex; align-items: center; gap: 6px; background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 10px; padding: 9px 14px; font: 600 15px var(--body); text-decoration: none; cursor: pointer; }
 .btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+.mobile-warn { background: var(--warn-bg); color: var(--warn); border-radius: 12px; padding: 12px 14px; margin: 0 0 14px; font-size: 15px; }
 .btn.sm { padding: 4px 10px; font-size: 14px; border-radius: 8px; vertical-align: 1px; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 16px; }
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 14px; }
@@ -62,6 +63,7 @@ a { color: var(--accent); }
 <div class="wrap">
   <h1>🏠 House Wishlist</h1>
   <p class="lead">La lista di tutto quello che serve per la casa nuova, stanza per stanza, con budget, foto e link. Vedi un prodotto online, clicchi un'icona e finisce nella lista, già con nome, prezzo e stanza.</p>
+  <div class="mobile-warn" id="mobileWarn" hidden>📱 <b>Sei sul telefono.</b> Questa configurazione si fa dal <b>computer</b>, con Chrome: dal telefono Google non riesce a copiare il foglio e mostra "Impossibile aprire il file". Mandati questo link e aprilo dal PC.</div>
   <div class="hero-actions">
     <a class="btn" href="https://docs.google.com/spreadsheets/d/1nNgXQRwBtEuTrC0G84SEBZ5U2WfVK6_cUf2_ficSf08/copy" target="_blank" rel="noopener">1 · Crea la mia lista ↗</a>
     <a class="btn ghost" href="https://drive.google.com/uc?export=download&amp;id=1M59XeUV0NgWn7CxW5uH9lDWO0PFTS8j6" target="_blank" rel="noopener">⬇ Scarica l'estensione per Chrome</a>
@@ -81,6 +83,7 @@ a { color: var(--accent); }
       <p>Apri questo link e clicca <b>Crea una copia</b> (Make a copy). Insieme al foglio viene copiata anche l'app.</p>
       <p><a class="btn" href="https://docs.google.com/spreadsheets/d/1nNgXQRwBtEuTrC0G84SEBZ5U2WfVK6_cUf2_ficSf08/copy" target="_blank" rel="noopener">Crea la mia copia ↗</a> <a class="btn sm ghost" href="https://drive.google.com/drive/my-drive" target="_blank" rel="noopener">Apri il mio Drive ↗</a></p>
       <p class="small">La copia si chiama "Copia di House Wishlist" e la ritrovi sempre nel tuo Google Drive.</p>
+      <p class="note"><b>Compare "Impossibile aprire il file in questo momento"?</b> Succede se sei sul telefono o se in Chrome sei collegato con più account Google. Usa il computer e, se serve, apri il modello <a href="https://docs.google.com/spreadsheets/d/1nNgXQRwBtEuTrC0G84SEBZ5U2WfVK6_cUf2_ficSf08/edit?usp=sharing" target="_blank" rel="noopener">da questo link</a> e scegli <b>File → Crea una copia</b>. Con più account: apri il link in una finestra in incognito e accedi solo con il tuo account personale.</p>
     </div></li>
     <li><div>
       <h3>Prepara la lista <span class="who">tu</span></h3>
@@ -159,6 +162,8 @@ Regole: non inserire tu password, chiavi API o dati di pagamento; non cambiare i
 
 <div class="toast" id="toast" hidden></div>
 <script>
+// Phones can't copy the Google Sheet or install Chrome extensions: say so up front.
+if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) document.getElementById("mobileWarn").hidden = false;
 // Small copy buttons (for addresses a web page can't open directly, like chrome://extensions).
 document.addEventListener("click", async e => {
   const b = e.target.closest("[data-copy]"); if (!b) return;
