@@ -16,7 +16,7 @@ Vedi un prodotto online, clicchi l'icona nel browser e finisce nella lista, già
 | 1. Crea la tua lista | [Crea una copia del foglio ↗](https://docs.google.com/spreadsheets/d/1nNgXQRwBtEuTrC0G84SEBZ5U2WfVK6_cUf2_ficSf08/copy) (l'app viene copiata insieme) |
 | 2. Chiave Gemini gratuita | [Google AI Studio ↗](https://aistudio.google.com/apikey) |
 | 3. Estensione per Chrome | [Scarica lo zip ↗](https://drive.google.com/uc?export=download&id=1M59XeUV0NgWn7CxW5uH9lDWO0PFTS8j6) oppure *Code → Download ZIP* qui sopra |
-| Guida completa | [`docs/index.html`](docs/index.html), con tutti i passaggi |
+| Guida completa | [Apri la guida ↗](https://script.google.com/macros/s/AKfycbzESKneL787IbXefKeIk2hGIDDvi1wmr3LX4lbnLJxZa0vsB6N_bMlFIQomaGjRVheY/exec) (anche in [`docs/index.html`](docs/index.html)) |
 
 ### In breve
 1. **Copia il foglio** con il link qui sopra e premi F5. Compare il menu **🏠 House Wishlist**.
