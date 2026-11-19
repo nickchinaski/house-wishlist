@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "House Wishlist",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Add the product you're looking at to our new-home shopping list (Google Sheet), with name, price and room filled in by Gemini.",
   "action": {
     "default_popup": "popup.html",

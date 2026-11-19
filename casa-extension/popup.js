@@ -20,8 +20,8 @@ function showSetup(msg) {
   $("#saveApp").onclick = async () => {
     const v = $("#appUrl").value.trim().replace(/\?.*$/, "");
     if (!APP_RE.test(v)) { showSetup("That doesn't look like a House Wishlist link. It should start with https://script.google.com/macros/s/ and end with /exec."); return; }
-    APP = v;
-    try { await chrome.storage.sync.set({ appUrl: v }); } catch (e) {}
+    APP = v; ACCT = null;
+    try { await chrome.storage.sync.set({ appUrl: v, acct: null }); } catch (e) {}
     start();
   };
 }
@@ -79,21 +79,33 @@ function extractFromPage() {
   return { url: location.href, title: t.slice(0, 200), price: p, text: b.slice(i, i + 700), image: img };
 }
 
+// With several Google accounts signed in, Google answers for the first one by default.
+// Try each signed-in account (/macros/u/N/s/...) until one can open the list, and remember it.
+let ACCT = null;
+function forAccount(url, n) { return n ? url.replace("/macros/s/", "/macros/u/" + n + "/s/") : url; }
 async function api(body) {
-  let res;
-  try {
-    res = await fetch(APP, { method: "POST", credentials: "include", body: JSON.stringify(body) });
-  } catch (e) { throw { code: "NETWORK" }; }
-  const text = await res.text();
-  let j;
-  try { j = JSON.parse(text); } catch (e) { throw { code: "AUTH" }; }
-  if (!j.ok) throw { code: j.error || "ERROR" };
-  return j.data;
+  if (ACCT == null) { try { const r = await chrome.storage.sync.get("acct"); ACCT = Number.isInteger(r.acct) ? r.acct : null; } catch (e) {} }
+  const order = [ACCT, 0, 1, 2, 3, 4].filter((v, i, a) => v != null && a.indexOf(v) === i);
+  let net = false;
+  for (const n of order) {
+    let res;
+    try { res = await fetch(forAccount(APP, n), { method: "POST", credentials: "include", body: JSON.stringify(body) }); }
+    catch (e) { net = true; continue; }
+    const text = await res.text();
+    let j;
+    try { j = JSON.parse(text); } catch (e) { continue; }
+    if (n !== ACCT) { ACCT = n; try { await chrome.storage.sync.set({ acct: n }); } catch (e) {} }
+    if (!j.ok) throw { code: j.error || "ERROR" };
+    return j.data;
+  }
+  throw { code: net ? "NETWORK" : "AUTH" };
 }
+const listUrl = () => forAccount(APP, ACCT || 0);
 
 function errText(code) {
   const c = String(code || "");
-  if (c === "AUTH") return "Couldn't reach your list as you. Open the list once in Chrome (signed in with Google), then try again.";
+  if (c === "AUTH") return "Couldn't open your list with your Google account. Click \"Open list ↗\" above, press Allow (허용), then try again. / 리스트에 연결할 수 없어요. 위의 \"Open list ↗\"를 눌러 리스트를 열고 '허용'을 누른 뒤 다시 시도하세요.";
+  if (/permission|access|권한|denied/i.test(c)) return "Your Google account can't open this list yet: ask the owner to share the Google Sheet with you as Editor. / 이 리스트에 접근 권한이 없어요. 구글 시트를 편집자로 공유해 달라고 요청하세요.";
   if (c === "NETWORK") return "No connection to Google. Check your internet and try again.";
   if (c.includes("NO_KEY")) return "The Gemini key isn't set. In the Google Sheet use 🏠 House Wishlist → Set Gemini API key.";
   if (c.includes("GEMINI_LIMIT")) return "Gemini's free limit is reached for now. Try again in a minute.";
@@ -102,9 +114,9 @@ function errText(code) {
 }
 
 function appLink() {
-  if (!page) return APP;
+  if (!page) return listUrl();
   const notes = [page.title, page.price ? "Price: " + page.price : "", page.text].filter(Boolean).join(" ");
-  return APP + "?u=" + encodeURIComponent(page.url) + "&t=" + encodeURIComponent(page.title) + "&p=" + encodeURIComponent(page.price || "") + "&x=" + encodeURIComponent(notes.slice(0, 600)) + "&i=" + encodeURIComponent(page.image || "");
+  return listUrl() + "?u=" + encodeURIComponent(page.url) + "&t=" + encodeURIComponent(page.title) + "&p=" + encodeURIComponent(page.price || "") + "&x=" + encodeURIComponent(notes.slice(0, 600)) + "&i=" + encodeURIComponent(page.image || "");
 }
 
 function status(msg) { main.innerHTML = `<div class="status"><span class="spin"></span>${esc(msg)}</div>`; }
@@ -153,7 +165,7 @@ async function save() {
     const r = await api({ action: "save", url: page.url, name: d.name, room: d.room, priority: d.priority, qty: d.qty, price: d.price, store: d.store, summary: d.summary, matchId: d.matchId, image: d.image || "" });
     main.innerHTML = `<div class="note ok">${r.attached ? `Link added to "${esc(r.name)}"` : `Added "${esc(r.name)}" to ${esc(r.room)}`} ✓</div>
       <div class="acts"><button class="btn primary" id="openList2">Open the list</button><button class="btn" id="close">Close</button></div>`;
-    $("#openList2").onclick = () => chrome.tabs.create({ url: APP });
+    $("#openList2").onclick = () => chrome.tabs.create({ url: listUrl() });
     $("#close").onclick = () => window.close();
   } catch (e) {
     btn.disabled = false; btn.textContent = "Try again";
@@ -202,6 +214,6 @@ async function start() {
   }
 }
 
-$("#openList").onclick = async e => { e.preventDefault(); await loadApp(); if (APP) chrome.tabs.create({ url: APP }); else showSetup(""); };
+$("#openList").onclick = async e => { e.preventDefault(); await loadApp(); if (APP) chrome.tabs.create({ url: listUrl() }); else showSetup(""); };
 $("#changeList").onclick = async e => { e.preventDefault(); await loadApp(); showSetup(""); };
 start();
