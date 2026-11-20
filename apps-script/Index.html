@@ -8,6 +8,9 @@
 <script>window.addEventListener("error", function (e) { var l = document.getElementById("list"); if (l) l.innerHTML = '<div class="note err">Page error: ' + String(e.message || "").replace(/</g, "&lt;") + " (line " + (e.lineno || "?") + ")</div>"; });</script>
 <style>
 .nm { display: flex; align-items: center; gap: 10px; }
+select.pill { appearance: auto; -webkit-appearance: menulist; cursor: pointer; font: inherit; font-size: 12px; font-weight: 600; padding: 4px 6px; color: inherit; }
+select.pill:not([data-s="Chosen"]):not([data-s="Ordered"]):not([data-s="Bought"]) { color: var(--ink); }
+select.pill option { color: var(--ink); background: var(--surface); font-weight: 500; }
 img[data-zoom] { cursor: zoom-in; transition: transform .15s; }
 img[data-zoom]:hover { transform: scale(1.06); }
 .lb { position: fixed; inset: 0; z-index: 60; background: rgba(8, 12, 14, .82); display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
@@ -435,9 +438,11 @@ function rowHTML(it) {
   if (it.store) meta.push(esc(it.store));
   if (it.who) meta.push(esc(whoLabel(it.who)));
   const paid = Number(it.paid) || 0;
-  const priceTxt = it.status === "Bought" && paid ? `${eur(paid)}<small>paid</small>` : `${eur(estOf(it))}<small>est.</small>`;
+  // A price shows only once there's a real one: paid, or set for a chosen product / a link.
+  const priceTxt = it.status === "Bought" && paid ? `${eur(paid)}<small>paid</small>`
+    : (Number(it.est) > 0 ? `${eur(estOf(it))}<small>est.</small>` : `—<small>no price yet</small>`);
   let h = `<div class="row">
-    <button class="pill" data-act="cycle" data-s="${esc(it.status)}" title="Click to move to the next step"><span class="dot"></span>${esc(it.status)}</button>
+    <select class="pill" data-sel="status" data-s="${esc(it.status)}" aria-label="Status" title="Choose the status">${STATUSES.map(s => `<option value="${esc(s)}"${it.status === s ? " selected" : ""}>${esc(s)}</option>`).join("")}</select>
     <div class="nm">${itemImage(it) ? `<img class="th" data-zoom="1" data-cap="${esc(it.name)}" data-href="${esc(((it.links || [])[0] || {}).url || "")}" src="${esc(itemImage(it))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}<div class="nmt">${esc(it.name)}${(Number(it.qty) || 1) > 1 ? `<span class="q num">×${esc(it.qty)}</span>` : ""}${meta.length ? `<span class="meta">${meta.join(" · ")}</span>` : ""}</div></div>
     <div class="seg prio" role="group" aria-label="Priority">${PRIOS.map(([v, l]) => `<button data-act="prio" data-v="${v}" aria-pressed="${it.priority === v}">${l}</button>`).join("")}</div>
     <div class="price">${priceTxt}</div>
@@ -457,9 +462,10 @@ function rowHTML(it) {
         <div class="fld"><label for="pd-${esc(it.id)}">Price paid, total (${esc(sym().trim())})</label><input id="pd-${esc(it.id)}" data-f="paid" inputmode="decimal" value="${esc(dispVal(it.paid))}" placeholder="—"></div>
         <div class="fld"><label for="sr-${esc(it.id)}">Store</label><input id="sr-${esc(it.id)}" data-f="store" value="${esc(it.store || "")}"></div>
         <div class="fld wide"><label>Who's on it</label><div class="seg" role="group">${[["A", nA], ["B", nB], ["Both", "Both"]].map(([v, l]) => `<button data-act="who" data-v="${v}" aria-pressed="${it.who === v}">${esc(l)}</button>`).join("")}</div></div>
+        <div class="fld full"><label>Room</label><div class="seg st" role="group" aria-label="Move to room">${ROOMS.map(r => `<button data-act="room" data-v="${esc(r)}" aria-pressed="${it.room === r}">${esc(r)}</button>`).join("")}</div></div>
         <div class="fld full"><label for="nt-${esc(it.id)}">Notes</label><textarea id="nt-${esc(it.id)}" data-f="notes">${esc(it.notes || "")}</textarea></div>
       </div>
-      <div class="dfoot"><span class="hint">Room: ${esc(it.room)}</span><button class="del ${armed.has(it.id) ? "arm" : ""}" data-act="del">${armed.has(it.id) ? "Click again to delete" : "Delete item"}</button></div>
+      <div class="dfoot"><span class="hint">Tip: pick another room above to move this item.</span><button class="del ${armed.has(it.id) ? "arm" : ""}" data-act="del">${armed.has(it.id) ? "Click again to delete" : "Delete item"}</button></div>
     </div>`;
   }
   return h;
@@ -502,6 +508,13 @@ document.addEventListener("click", e => {
   if (act === "cycle") { const i = MAIN.indexOf(it.status); patch(id, { status: MAIN[(i + 1) % MAIN.length] }); }
   if (act === "prio") patch(id, { priority: b.dataset.v });
   if (act === "status") patch(id, { status: b.dataset.v });
+  if (act === "room" && b.dataset.v !== it.room) {
+    // Move the item: put it at the end of the new room, follow it there and keep it open.
+    patch(id, { room: b.dataset.v, order: Date.now() });
+    if (tab !== "All") tab = b.dataset.v;
+    render();
+    toast(`Moved "${it.name}" to ${b.dataset.v}`);
+  }
   if (act === "who") patch(id, { who: it.who === b.dataset.v ? "" : b.dataset.v });
   if (act === "rmlink") { const l = [...(it.links || [])]; l.splice(+b.dataset.i, 1); patch(id, { links: l }); }
   if (act === "del") {
@@ -533,6 +546,12 @@ document.addEventListener("submit", e => {
 });
 document.addEventListener("change", e => {
   const el = e.target;
+  if (el.dataset.sel === "status") {
+    const id = el.closest(".item").dataset.id;
+    patch(id, { status: el.value });
+    toast("Status: " + el.value);
+    return;
+  }
   if (el.dataset.f) {
     const id = el.closest(".item").dataset.id, f = el.dataset.f;
     let v = el.value.trim();

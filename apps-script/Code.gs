@@ -114,6 +114,7 @@ function onOpen() {
   SpreadsheetApp.getUi().createMenu('🏠 House Wishlist')
     .addItem('1. Set up the list', 'setup')
     .addItem('2. Set Gemini API key', 'setApiKey')
+    .addItem('Remove guessed prices', 'clearGuessedPrices')
     .addItem('Test Gemini', 'testGemini')
     .addToUi();
 }
@@ -168,7 +169,7 @@ function fillSeed_(sh) {
   sh.getRange(1, 1, 1, HEAD.length).setValues([HEAD]).setFontWeight('bold').setBackground('#1F3A5F').setFontColor('#FFFFFF');
   var now = new Date();
   var rows = SEED.map(function (s, i) {
-    return [newId_(), s[0], s[1], s[2], s[3], s[4], '', 'To choose', '', '', '', s[5], i, now, '', '=IF(INDIRECT("O"&ROW())="","",IMAGE(INDIRECT("O"&ROW())))'];
+    return [newId_(), s[0], s[1], s[2], s[3], '', '', 'To choose', '', '', '', s[5], i, now, '', '=IF(INDIRECT("O"&ROW())="","",IMAGE(INDIRECT("O"&ROW())))'];
   });
   sh.getRange(2, 1, rows.length, HEAD.length).setValues(rows);
   sh.setFrozenRows(1);
@@ -209,6 +210,26 @@ function buildSummary_(ss) {
   sh.getRange('D4:F' + (t + 3)).setNumberFormat('₩#,##0');
   sh.getRange('B' + (t + 2) + ':B' + (t + 3)).setNumberFormat('₩#,##0');
   sh.setColumnWidth(1, 160);
+}
+
+// Clears the starter estimates on items nobody has picked yet (no link, still "To choose", nothing paid).
+// Undo with File → Version history if needed.
+function clearGuessedPrices() {
+  var sh = itemsSheet_();
+  var vals = sh.getDataRange().getValues();
+  var col = {}; vals[0].forEach(function (h, i) { col[h] = i; });
+  var n = 0;
+  for (var r = 1; r < vals.length; r++) {
+    var row = vals[r];
+    if (!row[col.id]) continue;
+    var noLink = String(row[col.links] || '').trim() === '';
+    if (noLink && String(row[col.status]) === 'To choose' && row[col.paid] === '' && row[col.est_each] !== '') {
+      sh.getRange(r + 1, col.est_each + 1).setValue('');
+      n++;
+    }
+  }
+  try { SpreadsheetApp.getUi().alert('Removed ' + n + ' guessed prices.'); } catch (e) {}
+  return n;
 }
 
 function setApiKey() {
